@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.SessionAttributes;
 import org.springframework.web.bind.support.SessionStatus;
 
 import javax.servlet.http.HttpSession;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Controller for handling user authentication.
@@ -38,12 +40,27 @@ public class UserController {
      * @return a response indicating success or failure
      */
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody UserBean user, HttpSession session) {
+    public ResponseEntity<?> login(@RequestBody UserBean user, HttpSession session) {
         if (userService.authenticate(user)) {
-            session.setAttribute("user", user);
-            return new ResponseEntity<>("Login successful", HttpStatus.OK);
+            // Store only username in session, not the password
+            UserBean sessionUser = new UserBean();
+            sessionUser.setUsername(user.getUsername());
+            sessionUser.setAuthenticated(true);
+            
+            session.setAttribute("user", sessionUser);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "success");
+            response.put("message", "Login successful");
+            response.put("username", user.getUsername());
+            
+            return new ResponseEntity<>(response, HttpStatus.OK);
         } else {
-            return new ResponseEntity<>("Invalid credentials", HttpStatus.UNAUTHORIZED);
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "error");
+            response.put("message", "Invalid credentials");
+            
+            return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
         }
     }
 
@@ -55,10 +72,15 @@ public class UserController {
      * @return a response indicating success
      */
     @GetMapping("/logout")
-    public ResponseEntity<String> logout(HttpSession session, SessionStatus status) {
+    public ResponseEntity<?> logout(HttpSession session, SessionStatus status) {
         session.removeAttribute("user");
         status.setComplete();
-        return new ResponseEntity<>("Logout successful", HttpStatus.OK);
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", "success");
+        response.put("message", "Logout successful");
+        
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     /**
@@ -68,8 +90,17 @@ public class UserController {
      * @return a response indicating if the user is authenticated
      */
     @GetMapping("/isAuthenticated")
-    public ResponseEntity<Boolean> isAuthenticated(HttpSession session) {
+    public ResponseEntity<?> isAuthenticated(HttpSession session) {
         UserBean user = (UserBean) session.getAttribute("user");
-        return new ResponseEntity<>(user != null && user.isAuthenticated(), HttpStatus.OK);
+        boolean authenticated = (user != null && user.isAuthenticated());
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("authenticated", authenticated);
+        
+        if (authenticated) {
+            response.put("username", user.getUsername());
+        }
+        
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 }

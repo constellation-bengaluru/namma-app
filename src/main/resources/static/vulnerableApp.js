@@ -221,9 +221,14 @@ function getUrlForVulnerabilityLevel() {
 function genericResponseHandler(xmlHttpRequest, callBack, isJson) {
   if (xmlHttpRequest.readyState == XMLHttpRequest.DONE) {
     // XMLHttpRequest.DONE == 4
-    if (xmlHttpRequest.status == 200 || xmlHttpRequest.status == 401) {
+    if (xmlHttpRequest.status >= 200 && xmlHttpRequest.status < 300 || xmlHttpRequest.status == 401) {
       if (isJson) {
-        callBack(JSON.parse(xmlHttpRequest.responseText));
+        try {
+          callBack(JSON.parse(xmlHttpRequest.responseText));
+        } catch (e) {
+          // If JSON parsing fails, treat as text
+          callBack(xmlHttpRequest.responseText);
+        }
       } else {
         callBack(xmlHttpRequest.responseText);
       }
@@ -263,8 +268,11 @@ function doPostAjaxCall(callBack, url, isJson, data) {
 // Function to check if user is authenticated
 function checkAuthentication() {
   doGetAjaxCall(
-    function (isAuthenticated) {
-      updateLoginUI(isAuthenticated);
+    function (response) {
+      updateLoginUI(response.authenticated);
+      if (response.authenticated) {
+        console.log("Logged in as: " + response.username);
+      }
     },
     "/isAuthenticated",
     true
@@ -424,5 +432,5 @@ function showLoginPage() {
     
     // Add the login page to the document
     pageContainer.appendChild(loginPageContainer);
-  }, "/templates/login.html", false);
+  }, "/login.html", false);
 }

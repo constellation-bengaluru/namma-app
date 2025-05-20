@@ -113,8 +113,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 loginButton.textContent = 'Login';
                 loginError.classList.add('hidden');
                 
-                // Redirect to home page or refresh current page
-                window.location.href = '/VulnerableApp';
+                if (response.status === 'success') {
+                    // Update UI or redirect
+                    window.location.href = '/VulnerableApp';
+                } else {
+                    // Handle error response
+                    loginError.textContent = response.message || 'Login failed. Please try again.';
+                    loginError.classList.remove('hidden');
+                }
             }, 
             '/login', 
             true, 
