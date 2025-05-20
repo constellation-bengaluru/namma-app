@@ -310,6 +310,11 @@ hr {
     max-width: 800px;
 }
 
+#user-welcome {
+    color: green;
+    font-weight: bold;
+}
+
 .hidden {
     display: none !important;
 }

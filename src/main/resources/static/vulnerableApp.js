@@ -271,7 +271,10 @@ function checkAuthentication() {
     function (response) {
       updateLoginUI(response.authenticated);
       if (response.authenticated) {
-        console.log("Logged in as: " + response.username);
+        const userWelcome = document.getElementById("user-welcome");
+        if (userWelcome) {
+          userWelcome.textContent = "Welcome, " + response.username;
+        }
       }
     },
     "/isAuthenticated",
@@ -283,13 +286,20 @@ function checkAuthentication() {
 function updateLoginUI(isAuthenticated) {
   const loginNavItem = document.getElementById("login-nav-item");
   const logoutNavItem = document.getElementById("logout-nav-item");
+  const userWelcome = document.getElementById("user-welcome");
   
   if (isAuthenticated) {
     loginNavItem.classList.add("hidden");
     logoutNavItem.classList.remove("hidden");
+    if (userWelcome) {
+      userWelcome.classList.remove("hidden");
+    }
   } else {
     loginNavItem.classList.remove("hidden");
     logoutNavItem.classList.add("hidden");
+    if (userWelcome) {
+      userWelcome.classList.add("hidden");
+    }
   }
 }
 
