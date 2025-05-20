@@ -254,7 +254,47 @@ function doPostAjaxCall(callBack, url, isJson, data) {
     return genericResponseHandler(xmlHttpRequest, callBack, isJson);
   };
   xmlHttpRequest.open("POST", url, true);
+  if (isJson) {
+    xmlHttpRequest.setRequestHeader("Content-Type", "application/json");
+  }
   xmlHttpRequest.send(data);
+}
+
+// Function to check if user is authenticated
+function checkAuthentication() {
+  doGetAjaxCall(
+    function (isAuthenticated) {
+      updateLoginUI(isAuthenticated);
+    },
+    "/isAuthenticated",
+    true
+  );
+}
+
+// Function to update UI based on authentication status
+function updateLoginUI(isAuthenticated) {
+  const loginNavItem = document.getElementById("login-nav-item");
+  const logoutNavItem = document.getElementById("logout-nav-item");
+  
+  if (isAuthenticated) {
+    loginNavItem.classList.add("hidden");
+    logoutNavItem.classList.remove("hidden");
+  } else {
+    loginNavItem.classList.remove("hidden");
+    logoutNavItem.classList.add("hidden");
+  }
+}
+
+// Function to handle logout
+function logout() {
+  doGetAjaxCall(
+    function () {
+      // Redirect to home page after logout
+      window.location.href = "/VulnerableApp";
+    },
+    "/logout",
+    false
+  );
 }
 
 function generateMasterDetail(vulnerableAppEndPointData) {
@@ -354,7 +394,35 @@ function _addingEventListenerToShowHideHelpButton(vulnerableAppEndPointData) {
     document.getElementById("vulnLearnBtn").classList.add("hide-component");
   });
 
-  //  document.getElementById("about").addEventListener("click", () => {
-  //    document.getElementById("aboutContainer").scrollIntoView(true);
-  //  });
+  // Check authentication status when page loads
+  checkAuthentication();
 })();
+
+// Function to show the login page
+function showLoginPage() {
+  // Clear main content areas
+  document.getElementById("testScanner").classList.add("hide-component");
+  document.getElementById("learnAndPractice").classList.add("hide-component");
+  document.getElementById("chooseMode").classList.add("hide-component");
+  
+  // Get main container
+  const pageContainer = document.getElementById("pageContainer");
+  
+  // Create a container for the login page
+  const loginPageContainer = document.createElement("div");
+  loginPageContainer.id = "loginPageContainer";
+  
+  // Fetch and display the login page
+  doGetAjaxCall((responseText) => {
+    loginPageContainer.innerHTML = responseText;
+    
+    // Remove any existing login container
+    const existingLoginContainer = document.getElementById("loginPageContainer");
+    if (existingLoginContainer) {
+      existingLoginContainer.remove();
+    }
+    
+    // Add the login page to the document
+    pageContainer.appendChild(loginPageContainer);
+  }, "/templates/login.html", false);
+}
