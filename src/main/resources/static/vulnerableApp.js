@@ -221,9 +221,14 @@ function getUrlForVulnerabilityLevel() {
 function genericResponseHandler(xmlHttpRequest, callBack, isJson) {
   if (xmlHttpRequest.readyState == XMLHttpRequest.DONE) {
     // XMLHttpRequest.DONE == 4
-    if (xmlHttpRequest.status == 200 || xmlHttpRequest.status == 401) {
+    if (xmlHttpRequest.status >= 200 && xmlHttpRequest.status < 300 || xmlHttpRequest.status == 401) {
       if (isJson) {
-        callBack(JSON.parse(xmlHttpRequest.responseText));
+        try {
+          callBack(JSON.parse(xmlHttpRequest.responseText));
+        } catch (e) {
+          // If JSON parsing fails, treat as text
+          callBack(xmlHttpRequest.responseText);
+        }
       } else {
         callBack(xmlHttpRequest.responseText);
       }
@@ -254,7 +259,60 @@ function doPostAjaxCall(callBack, url, isJson, data) {
     return genericResponseHandler(xmlHttpRequest, callBack, isJson);
   };
   xmlHttpRequest.open("POST", url, true);
+  if (isJson) {
+    xmlHttpRequest.setRequestHeader("Content-Type", "application/json");
+  }
   xmlHttpRequest.send(data);
+}
+
+// Function to check if user is authenticated
+function checkAuthentication() {
+  doGetAjaxCall(
+    function (response) {
+      updateLoginUI(response.authenticated);
+      if (response.authenticated) {
+        const userWelcome = document.getElementById("user-welcome");
+        if (userWelcome) {
+          userWelcome.textContent = "Welcome, " + response.username;
+        }
+      }
+    },
+    "/isAuthenticated",
+    true
+  );
+}
+
+// Function to update UI based on authentication status
+function updateLoginUI(isAuthenticated) {
+  const loginNavItem = document.getElementById("login-nav-item");
+  const logoutNavItem = document.getElementById("logout-nav-item");
+  const userWelcome = document.getElementById("user-welcome");
+  
+  if (isAuthenticated) {
+    loginNavItem.classList.add("hidden");
+    logoutNavItem.classList.remove("hidden");
+    if (userWelcome) {
+      userWelcome.classList.remove("hidden");
+    }
+  } else {
+    loginNavItem.classList.remove("hidden");
+    logoutNavItem.classList.add("hidden");
+    if (userWelcome) {
+      userWelcome.classList.add("hidden");
+    }
+  }
+}
+
+// Function to handle logout
+function logout() {
+  doGetAjaxCall(
+    function () {
+      // Redirect to home page after logout
+      window.location.href = "/VulnerableApp";
+    },
+    "/logout",
+    false
+  );
 }
 
 function generateMasterDetail(vulnerableAppEndPointData) {
@@ -354,7 +412,35 @@ function _addingEventListenerToShowHideHelpButton(vulnerableAppEndPointData) {
     document.getElementById("vulnLearnBtn").classList.add("hide-component");
   });
 
-  //  document.getElementById("about").addEventListener("click", () => {
-  //    document.getElementById("aboutContainer").scrollIntoView(true);
-  //  });
+  // Check authentication status when page loads
+  checkAuthentication();
 })();
+
+// Function to show the login page
+function showLoginPage() {
+  // Clear main content areas
+  document.getElementById("testScanner").classList.add("hide-component");
+  document.getElementById("learnAndPractice").classList.add("hide-component");
+  document.getElementById("chooseMode").classList.add("hide-component");
+  
+  // Get main container
+  const pageContainer = document.getElementById("pageContainer");
+  
+  // Create a container for the login page
+  const loginPageContainer = document.createElement("div");
+  loginPageContainer.id = "loginPageContainer";
+  
+  // Fetch and display the login page
+  doGetAjaxCall((responseText) => {
+    loginPageContainer.innerHTML = responseText;
+    
+    // Remove any existing login container
+    const existingLoginContainer = document.getElementById("loginPageContainer");
+    if (existingLoginContainer) {
+      existingLoginContainer.remove();
+    }
+    
+    // Add the login page to the document
+    pageContainer.appendChild(loginPageContainer);
+  }, "/login.html", false);
+}

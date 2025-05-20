@@ -304,6 +304,21 @@ hr {
     margin-left: 5%;
 }
 
+/* Login-related styles */
+#loginPageContainer {
+    margin: 2rem auto;
+    max-width: 800px;
+}
+
+#user-welcome {
+    color: green;
+    font-weight: bold;
+}
+
+.hidden {
+    display: none !important;
+}
+
 /**
  * Basic Animation for all the buttons in the VulnerableApp Application.
  */
